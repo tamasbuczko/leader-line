@@ -909,8 +909,11 @@
   var svgContainer = null;
 
   function getContainerOffset(container) {
-    var r = container.getBoundingClientRect();
-    return { x: -r.left, y: -r.top };
+    let r = container.getBoundingClientRect();
+    let style = window.getComputedStyle(container);
+    let borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    let borderTop = parseFloat(style.borderTopWidth) || 0;
+    return { x: -(r.left + borderLeft), y: -(r.top + borderTop) };
   }
 
   function setupWindow(window) {
