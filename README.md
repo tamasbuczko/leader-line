@@ -1400,17 +1400,21 @@ How to use:
 Set a custom container:
 Use this to attach the lines to a specific div. This ensures that if the container has overflow: hidden, the lines will stay within its boundaries during zooming or panning.
 
+```js
 // Attach lines to your specific zoom/scroll container
 LeaderLine.setCanvas(document.getElementById('zoomContainer'));
 
 // Now, all new lines will be created inside this container
 new LeaderLine(startElement, endElement);
+```
 
 Reset to default (body):
 If you want to go back to the original behavior where lines are attached to the body, simply call the method with null.
 
+```js
 // Switch back to document.body
 LeaderLine.setCanvas(null);
+```
 
 Why use this?
 Clipping: Lines will respect the overflow: hidden or overflow: auto properties of your container.
