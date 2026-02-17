@@ -902,6 +902,17 @@
     return bodyOffset;
   }
 
+  /**
+   * Optional container for line SVGs. If set, lines are appended here instead of body.
+   * Set via LeaderLine.setCanvas(container). Pass null/undefined to use body again.
+   */
+  var svgContainer = null;
+
+  function getContainerOffset(container) {
+    var r = container.getBoundingClientRect();
+    return { x: -r.left, y: -r.top };
+  }
+
   function setupWindow(window) {
     var baseDocument = window.document, defsSvg;
     if (!baseDocument.getElementById(DEFS_ID)) { // Add svg defs
@@ -962,12 +973,15 @@
       }
     });
 
-    if (props.baseWindow && props.svg) {
-      props.baseWindow.document.body.removeChild(props.svg);
+    if (props.baseWindow && props.svg && props.svg.parentNode) {
+      props.svg.parentNode.removeChild(props.svg);
     }
+
     props.baseWindow = newWindow;
     setupWindow(newWindow);
-    props.bodyOffset = getBodyOffset(newWindow); // Get `bodyOffset`
+    props.bodyOffset = (svgContainer || document.body) === document.body
+      ? getBodyOffset(newWindow)
+      : getContainerOffset(svgContainer);
 
     // Main SVG
     props.svg = svg = baseDocument.createElementNS(SVG_NS, 'svg');
@@ -1110,7 +1124,7 @@
       svg.style.visibility = 'hidden';
     }
 
-    baseDocument.body.appendChild(svg);
+    (LeaderLine.svgContainer || baseDocument.body).appendChild(svg);
 
     // label (after appendChild(svg), bBox is used)
     [0, 1, 2].forEach(function(i) {
@@ -2329,6 +2343,9 @@
    * @returns {void}
    */
   function update(props, needs) {
+    if (LeaderLine.svgContainer) {
+      props.bodyOffset = getContainerOffset(LeaderLine.svgContainer);
+    }
     var updated = {};
     if (needs.line) {
       updated.line = updateLine(props);
@@ -3516,8 +3533,8 @@
     if (curStats.show_animId) { anim.remove(curStats.show_animId); }
     props.attachments.slice().forEach(function(attachProps) { unbindAttachment(props, attachProps); });
 
-    if (props.baseWindow && props.svg) {
-      props.baseWindow.document.body.removeChild(props.svg);
+    if (props.baseWindow && props.svg && props.svg.parentNode) {
+      props.svg.parentNode.removeChild(props.svg);
     }
     delete insProps[this._id];
   };
@@ -3773,9 +3790,14 @@
         attachProps.path.style.fill = attachProps.fill || 'none';
         attachProps.isShown = false;
         svg.style.visibility = 'hidden';
-        baseDocument.body.appendChild(svg);
+
+        (LeaderLine.svgContainer || baseDocument.body).appendChild(svg);
+
         setupWindow((window = baseDocument.defaultView));
-        attachProps.bodyOffset = getBodyOffset(window); // Get `bodyOffset`
+        
+        attachProps.bodyOffset = LeaderLine.svgContainer
+          ? getContainerOffset(LeaderLine.svgContainer)
+          : getBodyOffset(window);
 
         // event handler for this instance
         attachProps.updateColor = function() {
@@ -5190,6 +5212,11 @@
     }
     traceLog.add('</positionByWindowResize>'); // [DEBUG/]
   }), false);
+
+  LeaderLine.svgContainer = null; // will be set by setCanvas
+  LeaderLine.setCanvas = function(container) {
+    LeaderLine.svgContainer = container || null;
+  };
 
   return LeaderLine;
 })();
